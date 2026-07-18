@@ -209,7 +209,7 @@ class Game:
         current_rank = 0
         if played_of_color:
             current_rank = max(c.rank.value for c in played_of_color)
-            
+
         return card.rank.value == current_rank + 1
 
     def _is_game_over(self) -> bool:
