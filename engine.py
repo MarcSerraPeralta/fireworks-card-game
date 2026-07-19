@@ -27,8 +27,11 @@ class Card:
     rank: Rank
 
 
+Hint = Color | Rank
+
+
 @dataclass
-class Hint:
+class Hints:
     colors: set[Color] = field(default_factory=lambda: set(Color))
     ranks: set[Rank] = field(default_factory=lambda: set(Rank))
 
@@ -42,7 +45,7 @@ class State:
     discarded: list[Card]
     played: list[Card]
     hands: list[list[Card]]
-    hints: list[list[Hint]]
+    hints: list[list[Hints]]
     notes: list[list[Note]]
     player_turn: int
     num_extra_turns: int
@@ -78,7 +81,7 @@ def initialize_state(num_players: int, seed: int | None = None) -> State:
         new_hand = [deck.pop(0) for _ in range(5)]
         hands.append(new_hand)
 
-    hints = [[Hint(), Hint(), Hint(), Hint(), Hint()] for _ in range(num_players)]
+    hints = [[Hints(), Hints(), Hints(), Hints(), Hints()] for _ in range(num_players)]
     notes: list[list[Note]] = [[[] for _ in range(5)] for _ in range(num_players)]
 
     rng = random.Random(seed)
@@ -198,6 +201,9 @@ class Game:
 
     def _remove_and_draw_card(self, player_ind: int, card_ind: int) -> Card:
         card = self.state.hands[player_ind].pop(card_ind)
+        _ = self.state.hints[player_ind].pop(card_ind)
+        _ = self.state.notes[player_ind].pop(card_ind)
+
         if self.state.deck:
             new_card = self.state.deck.pop(0)
             self.state.hands[player_ind].append(new_card)
@@ -223,3 +229,45 @@ class Game:
                 return False
 
         return True
+
+
+def card_to_dict(card: Card) -> dict[str, str | int]:
+    return {"color": card.color.value, "rank": card.rank.value}
+
+
+def dict_to_card(d: dict[str, str | int]) -> Card:
+    return Card(color=Color(d["color"]), rank=Rank(d["rank"]))
+
+
+def hints_to_dict(hint: Hints) -> dict[str, list[str] | list[int]]:
+    return {
+        "colors": [c.value for c in hint.colors],
+        "ranks": [r.value for r in hint.ranks],
+    }
+
+
+def dict_to_hint(d: dict[str, str | int]) -> Hint:
+    if "color" in d:
+        return Color(d["color"])
+    elif "rank" in d:
+        return Rank(d["rank"])
+    else:
+        raise ValueError("Dict must have 'color' or 'rank'")
+
+
+def state_to_dict(state: State) -> dict[str, int | list[object]]:
+    return {
+        "deck": [card_to_dict(c) for c in state.deck],
+        "discarded": [card_to_dict(c) for c in state.discarded],
+        "played": [card_to_dict(c) for c in state.played],
+        "hands": [[card_to_dict(c) for c in hand] for hand in state.hands],
+        "hints": [[hints_to_dict(h) for h in p_hints] for p_hints in state.hints],
+        "notes": [
+            [[card_to_dict(c) for c in note] for note in p_notes]
+            for p_notes in state.notes
+        ],
+        "player_turn": state.player_turn,
+        "num_extra_turns": state.num_extra_turns,
+        "num_hints": state.num_hints,
+        "num_lives": state.num_lives,
+    }
