@@ -1,4 +1,4 @@
-from engine import Hint, State, Card, Color, Rank, Hints
+from engine import Hint, State, Card, Color, Rank, Hints, is_game_over
 
 
 def dict_to_hint(d: dict[str, str | int]) -> Hint:
@@ -87,5 +87,6 @@ def render_state_to_dict(state: State) -> dict[str, object]:
         "player_turn": state.player_turn,
         "hands": hands,
         "player_names": [f"Player {i}" for i, _ in enumerate(state.hands)],
+        "game_over": is_game_over(state),
     }
 

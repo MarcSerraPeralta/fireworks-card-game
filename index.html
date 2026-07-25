@@ -183,14 +183,23 @@
                 document.getElementById('logs').innerHTML = state.last_actions.map(a => `<div>${a}</div>`).join('');
             }
 
-            const isMyTurn = (state.player_turn === myId);
+            const isGameOver = state.game_over;
+            const isMyTurn = (state.player_turn === myId) && !isGameOver;
 
             // Render Hands & Board
             const area = document.getElementById('players-area');
             area.innerHTML = '';
 
+            // Optional Game Over Banner at top of players area
+            if (isGameOver) {
+                const banner = document.createElement('div');
+                banner.className = 'mb3 pa3 br2 bg-red white tc fw-bold shadow-1 f4';
+                banner.innerText = `Game Over! Final Score: ${state.score} / ${state.max_score}`;
+                area.appendChild(banner);
+            }
+
             (state.hands || []).forEach((hand, pIdx) => {
-                const isTurn = (pIdx === state.player_turn);
+                const isTurn = (pIdx === state.player_turn) && !isGameOver;
                 const isMe = (pIdx === myId);
 
                 const pDiv = document.createElement('div');
@@ -227,7 +236,7 @@
                 });
                 pDiv.appendChild(row);
 
-                // --- CONTROLS / ACTION BUTTONS (Only if IT IS MY TURN) ---
+                // --- CONTROLS / ACTION BUTTONS (Only if IT IS MY TURN and Game is NOT Over) ---
                 if (isMyTurn) {
                     const controls = document.createElement('div');
                     controls.className = 'mt3 pt2 bt b--black-20 flex flex-wrap items-center';

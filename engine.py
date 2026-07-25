@@ -121,7 +121,7 @@ class Game:
         if card.rank == Rank.FIVE:
             self.state.num_hints = min(8, self.state.num_hints + 1)
         self._advance_turn()
-        if self._is_game_over():
+        if is_game_over(self.state):
             self.game_over = True
 
         action = ["play_card", str(player), card.color.value, str(card.rank.value)]
@@ -137,7 +137,7 @@ class Game:
 
         self.state.num_hints = min(8, self.state.num_hints + 1)
         self._advance_turn()
-        if self._is_game_over():
+        if is_game_over(self.state):
             self.game_over = True
 
         action = ["discard_card", str(player), card.color.value, str(card.rank.value)]
@@ -171,7 +171,7 @@ class Game:
 
         self.state.num_hints -= 1
         self._advance_turn()
-        if self._is_game_over():
+        if is_game_over(self.state):
             self.game_over = True
 
         action = [
@@ -232,15 +232,15 @@ class Game:
 
         return card.rank.value == current_rank + 1
 
-    def _is_game_over(self) -> bool:
-        if self.state.num_extra_turns == 0:
-            return True
-        if self.state.num_lives == 0:
-            return True
-
-        for color in Color:
-            if len([c for c in self.state.played if c.color == color]) < 5:
-                return False
-
+def is_game_over(state) -> bool:
+    if state.num_extra_turns == 0:
         return True
+    if state.num_lives == 0:
+        return True
+
+    for color in Color:
+        if len([c for c in state.played if c.color == color]) < 5:
+            return False
+
+    return True
 
