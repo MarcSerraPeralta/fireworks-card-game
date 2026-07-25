@@ -14,6 +14,9 @@
         /* Scaled up standard card styling for hand and fireworks */
         .card-box { width: 5.8rem; height: 5.8rem; border-radius: 0.35rem; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; font-weight: bold; user-select: none; }
         
+        /* Card column container to align cards and buttons in columns */
+        .card-column { width: 5.8rem; display: flex; flex-direction: column; align-items: center; margin-right: 0.75rem; margin-bottom: 0.5rem; }
+
         /* Smaller card styling for the discard pile */
         .card-box-small { width: 1.5rem; height: 2.1rem; border-radius: 0.2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; font-weight: bold; user-select: none; font-size: 0.75rem; }
 
@@ -163,7 +166,7 @@
                 document.getElementById('deck-box').className = `card-box card-${deckColor} shadow-1 mb1`;
             }
 
-            // Render Fireworks with larger font (f3)
+            // Render Fireworks with larger font
             const fw = document.getElementById('fireworks');
             fw.innerHTML = (state.fireworks || []).map(f => 
                 `<div class="card-box card-${f[0].toLowerCase()} mr2 shadow-1"><span class="f3">${f[1]}</span></div>`
@@ -226,55 +229,63 @@
                 headerHTML += `</div></div>`;
                 pDiv.innerHTML = headerHTML;
 
+                // Cards & Actions Grid Row
                 const row = document.createElement('div');
-                row.className = 'flex flex-row flex-wrap gap-2';
+                row.className = 'flex flex-row flex-wrap';
 
-                hand.forEach((card) => {
+                hand.forEach((card, cIdx) => {
+                    const cardCol = document.createElement('div');
+                    cardCol.className = 'card-column';
+
                     const cDiv = document.createElement('div');
                     const displayColor = isMe ? (card.color || 'gray') : card.color;
-                    cDiv.className = `card-box card-${displayColor.toLowerCase()} mr2 shadow-1`;
-                    // Render hand cards with larger font (f3)
+                    cDiv.className = `card-box card-${displayColor.toLowerCase()} shadow-1`;
                     cDiv.innerHTML = `<span class="f3">${card.rank || ''}</span>`;
                     
                     if (isMe) {
                         cDiv.appendChild(createHintMatrix(card));
                     }
-                    row.appendChild(cDiv);
+                    cardCol.appendChild(cDiv);
+
+                    // If it's my turn and my hand, append Play and Discard buttons in columns underneath
+                    if (isMyTurn && isMe) {
+                        const playBtn = document.createElement('button');
+                        playBtn.onclick = () => action('play_card', {card_ind: cIdx});
+                        playBtn.className = 'button-reset bg-green white bn pv1 mt2 f7 fw6 pointer action-btn w-100 br1';
+                        playBtn.innerText = 'Play';
+                        cardCol.appendChild(playBtn);
+
+                        const discardBtn = document.createElement('button');
+                        discardBtn.onclick = () => action('discard_card', {card_ind: cIdx});
+                        discardBtn.className = 'button-reset bg-red white bn pv1 mt1 f7 fw6 pointer action-btn w-100 br1';
+                        discardBtn.innerText = 'Discard';
+                        cardCol.appendChild(discardBtn);
+                    }
+
+                    row.appendChild(cardCol);
                 });
                 pDiv.appendChild(row);
 
-                if (isMyTurn) {
+                // --- CONTROLS FOR GIVING HINTS (Only if IT IS MY TURN and it is NOT my hand) ---
+                if (isMyTurn && !isMe) {
                     const controls = document.createElement('div');
                     controls.className = 'mt3 pt2 bt b--black-20 flex flex-wrap items-center';
+                    controls.innerHTML = `<span class="f6 mr3 o-80">Give Hint to ${playerName}:</span>`;
+                    
+                    const colorGroup = document.createElement('div');
+                    colorGroup.className = 'mr3 mb1 flex gap-1';
+                    colorNames.forEach(c => {
+                        colorGroup.innerHTML += `<button onclick="action('give_hint', {player_ind: ${pIdx}, hint: {color: '${c}'}})" class="button-reset bg-near-white dark-gray ba b--black-20 ph2 pv1 pointer f7 br1 action-btn">${c}</button>`;
+                    });
+                    controls.appendChild(colorGroup);
 
-                    if (isMe) {
-                        controls.innerHTML = `<span class="f6 mr3 o-80">Actions for your hand:</span>`;
-                        hand.forEach((_, cIdx) => {
-                            const btnGroup = document.createElement('div');
-                            btnGroup.className = 'mr3 mb1 flex bg-black-50 br1 overflow-hidden';
-                            btnGroup.innerHTML = `
-                                <button onclick="action('play_card', {card_ind: ${cIdx}})" class="button-reset bg-green white bn ph2 pv1 pointer f7 action-btn">Play #${cIdx}</button>
-                                <button onclick="action('discard_card', {card_ind: ${cIdx}})" class="button-reset bg-red white bn ph2 pv1 pointer f7 action-btn">Discard #${cIdx}</button>
-                            `;
-                            controls.appendChild(btnGroup);
-                        });
-                    } else {
-                        controls.innerHTML = `<span class="f6 mr3 o-80">Give Hint to ${playerName}:</span>`;
-                        
-                        const colorGroup = document.createElement('div');
-                        colorGroup.className = 'mr3 mb1 flex gap-1';
-                        colorNames.forEach(c => {
-                            colorGroup.innerHTML += `<button onclick="action('give_hint', {player_ind: ${pIdx}, hint: {color: '${c}'}})" class="button-reset bg-near-white dark-gray ba b--black-20 ph2 pv1 pointer f7 br1 action-btn">${c}</button>`;
-                        });
-                        controls.appendChild(colorGroup);
-
-                        const rankGroup = document.createElement('div');
-                        rankGroup.className = 'mb1 flex gap-1';
-                        [1, 2, 3, 4, 5].forEach(r => {
-                            rankGroup.innerHTML += `<button onclick="action('give_hint', {player_ind: ${pIdx}, hint: {rank: ${r}}})" class="button-reset bg-near-white dark-gray ba b--black-20 ph2 pv1 pointer f7 br1 action-btn">${r}</button>`;
-                        });
-                        controls.appendChild(rankGroup);
-                    }
+                    const rankGroup = document.createElement('div');
+                    rankGroup.className = 'mb1 flex gap-1';
+                    [1, 2, 3, 4, 5].forEach(r => {
+                        rankGroup.innerHTML += `<button onclick="action('give_hint', {player_ind: ${pIdx}, hint: {rank: ${r}}})" class="button-reset bg-near-white dark-gray ba b--black-20 ph2 pv1 pointer f7 br1 action-btn">${r}</button>`;
+                    });
+                    controls.appendChild(rankGroup);
+                    
                     pDiv.appendChild(controls);
                 }
 
