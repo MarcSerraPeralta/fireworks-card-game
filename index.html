@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hanab • Play Hanabi Online!</title>
+    <title>Fireworks • Play Fireworks Online!</title>
     <link rel="stylesheet" href="https://unpkg.com/tachyons@4/css/tachyons.min.css">
     <style>
         body { background-color: #00153f; color: white; font-family: sans-serif; margin: 0; }
@@ -36,7 +36,7 @@
 <body class="bg-main-dark h-100 flex flex-column">
 
     <div id="login" class="screen active pa4 flex flex-column items-center justify-center vh-100">
-        <h1 class="f2 mb3">Hanab Online</h1>
+        <h1 class="f2 mb3">Fireworks Online</h1>
         <p class="f5 mb4 o-70">Cooperative multiplayer card game</p>
         <div class="bg-black-50 pa4 br3 shadow-2 flex flex-column">
             <input id="p-id" class="input-reset ba b--black-20 pa2 mb3 db w-100 br2 bg-near-white dark-gray" placeholder="Enter Player ID (e.g., 0, 1...)">
@@ -54,7 +54,7 @@
 
     <div id="game-area" class="screen flex flex-column h-100 w-100">
         <div class="bg-black-50 pa2 ph4 flex justify-between items-center bb b--black-20">
-            <div class="w-third"><span id="score" class="f6 f5-l ttu fwb">Hanab • Score: 0 / 25</span></div>
+            <div class="w-third"><span id="score" class="f6 f5-l ttu fwb">Score: 0 / 25</span></div>
             <div class="w-third tc">
                 <button onclick="action('undo')" class="button-reset bg-black-70 white ba b--black-40 ph3 pv1 pointer f6 br2 shadow-1 action-btn mr2">Undo</button>
                 <button onclick="action('quit_game')" class="button-reset bg-red white ba b--red ph3 pv1 pointer f6 br2 shadow-1 action-btn">Quit Game</button>
@@ -146,7 +146,7 @@
 
         function render(state) {
             document.getElementById('stats').innerText = `Lives: ${state.lives} | Hints: ${state.hints}`;
-            document.getElementById('score').innerText = `Hanab • Score: ${state.score} / ${state.max_score}`;
+            document.getElementById('score').innerText = `Score: ${state.score} / ${state.max_score}`;
             
             // Render Deck with background color and value from state.deck dict
             if (state.deck) {
