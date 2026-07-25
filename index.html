@@ -11,8 +11,8 @@
         .screen { display: none; }
         .screen.active { display: block; }
         
-        /* Standard card styling for hand and fireworks */
-        .card-box { width: 2.5rem; height: 3.5rem; border-radius: 0.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; font-weight: bold; user-select: none; }
+        /* Scaled up standard card styling for hand and fireworks */
+        .card-box { width: 5.8rem; height: 5.8rem; border-radius: 0.35rem; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; font-weight: bold; user-select: none; }
         
         /* Smaller card styling for the discard pile */
         .card-box-small { width: 1.5rem; height: 2.1rem; border-radius: 0.2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; font-weight: bold; user-select: none; font-size: 0.75rem; }
@@ -25,9 +25,9 @@
         .card-gray { background-color: #7f8c8d; color: #fff; border: 1px solid #626567; }
         
         /* Hint Matrix for Self Cards */
-        .hint-matrix { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; width: 100%; font-size: 0.5rem; position: absolute; bottom: 2px; padding: 0 2px; }
-        .hint-item { text-align: center; background: rgba(255,255,255,0.2); border-radius: 1px; color: white; }
-        .crossed { text-decoration: line-through; opacity: 0.25; }
+        .hint-matrix { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; width: 100%; font-size: 0.65rem; position: absolute; bottom: 4px; padding: 0 4px; }
+        .hint-item { text-align: center; border-radius: 2px; padding: 1px 0; }
+        .crossed { text-decoration: line-through; opacity: 0.15; }
         
         .action-btn { cursor: pointer; transition: transform 0.1s ease; }
         .action-btn:hover { transform: scale(1.05); }
@@ -71,7 +71,7 @@
             <div class="flex items-center">
                 <div class="tc flex flex-column items-center">
                     <div id="deck-box" class="card-box card-blue shadow-1 mb1">
-                        <span id="deck-count" class="f5 fwbold">0</span>
+                        <span id="deck-count" class="f3 fwbold">0</span>
                     </div>
                     <span class="f7 o-60">deck</span>
                 </div>
@@ -131,13 +131,22 @@
 
             colorNames.forEach(c => {
                 const div = document.createElement('div');
-                div.className = `hint-item ${colors.includes(c) ? 'crossed' : ''}`;
+                const isCrossed = colors.includes(c);
+                div.className = `hint-item ${isCrossed ? 'crossed' : ''}`;
+                
+                if (c === 'Red') div.style.cssText = "background-color: #e74c3c; color: white; font-weight: bold;";
+                else if (c === 'Blue') div.style.cssText = "background-color: #3498db; color: white; font-weight: bold;";
+                else if (c === 'Green') div.style.cssText = "background-color: #27ae60; color: white; font-weight: bold;";
+                else if (c === 'Yellow') div.style.cssText = "background-color: #f1c40f; color: #2c3e50; font-weight: bold;";
+                else if (c === 'White') div.style.cssText = "background-color: #ecf0f1; color: #2c3e50; font-weight: bold;";
+
                 div.innerText = c[0];
                 container.appendChild(div);
             });
             [1, 2, 3, 4, 5].forEach(r => {
                 const div = document.createElement('div');
                 div.className = `hint-item ${ranks.includes(r) ? 'crossed' : ''}`;
+                div.style.cssText = "background: rgba(255,255,255,0.2); color: white; font-weight: bold;";
                 div.innerText = r;
                 container.appendChild(div);
             });
@@ -148,17 +157,16 @@
             document.getElementById('stats').innerText = `Lives: ${state.lives} | Hints: ${state.hints}`;
             document.getElementById('score').innerText = `Score: ${state.score} / ${state.max_score}`;
             
-            // Render Deck with background color and value from state.deck dict
             if (state.deck) {
                 document.getElementById('deck-count').innerText = state.deck.value;
                 const deckColor = (state.deck.color || 'blue').toLowerCase();
                 document.getElementById('deck-box').className = `card-box card-${deckColor} shadow-1 mb1`;
             }
 
-            // Render Fireworks
+            // Render Fireworks with larger font (f3)
             const fw = document.getElementById('fireworks');
             fw.innerHTML = (state.fireworks || []).map(f => 
-                `<div class="card-box card-${f[0].toLowerCase()} mr2 shadow-1"><span class="f5">${f[1]}</span></div>`
+                `<div class="card-box card-${f[0].toLowerCase()} mr2 shadow-1"><span class="f3">${f[1]}</span></div>`
             ).join('');
 
             // Render Discard Pile (5 rows, sorted cards, smaller size, right-aligned)
@@ -191,7 +199,6 @@
             const area = document.getElementById('players-area');
             area.innerHTML = '';
 
-            // Optional Game Over Banner at top of players area
             if (isGameOver) {
                 const banner = document.createElement('div');
                 banner.className = 'mb3 pa3 br2 bg-red white tc fw-bold shadow-1 f4';
@@ -206,7 +213,6 @@
                 const pDiv = document.createElement('div');
                 pDiv.className = `mb3 pa3 br2 bg-black-30 ba ${isTurn ? 'b--yellow' : 'b--transparent'}`;
                 
-                // Player Header with Turn Indicator
                 let headerHTML = `<div class="flex justify-between items-center mb2">
                     <div class="flex items-center">`;
                 if (isTurn) {
@@ -220,7 +226,6 @@
                 headerHTML += `</div></div>`;
                 pDiv.innerHTML = headerHTML;
 
-                // Cards Row
                 const row = document.createElement('div');
                 row.className = 'flex flex-row flex-wrap gap-2';
 
@@ -228,7 +233,8 @@
                     const cDiv = document.createElement('div');
                     const displayColor = isMe ? (card.color || 'gray') : card.color;
                     cDiv.className = `card-box card-${displayColor.toLowerCase()} mr2 shadow-1`;
-                    cDiv.innerHTML = `<span class="f5">${card.rank || ''}</span>`;
+                    // Render hand cards with larger font (f3)
+                    cDiv.innerHTML = `<span class="f3">${card.rank || ''}</span>`;
                     
                     if (isMe) {
                         cDiv.appendChild(createHintMatrix(card));
@@ -237,7 +243,6 @@
                 });
                 pDiv.appendChild(row);
 
-                // --- CONTROLS / ACTION BUTTONS (Only if IT IS MY TURN and Game is NOT Over) ---
                 if (isMyTurn) {
                     const controls = document.createElement('div');
                     controls.className = 'mt3 pt2 bt b--black-20 flex flex-wrap items-center';
