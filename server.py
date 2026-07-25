@@ -1,6 +1,7 @@
 import asyncio
 from fastapi import FastAPI, WebSocket
-from engine import Game, state_to_dict, dict_to_hint
+from engine import Game
+from render import render_state_to_dict, dict_to_hint
 
 
 class ConnectionManager:
@@ -19,8 +20,12 @@ class ConnectionManager:
         for player_ind, websocket in self.active_connections.items():
             view = game.get_game_view_for(player_ind)
             await websocket.send_json(
-                {"type": "STATE_UPDATE", "state": state_to_dict(view)}
+                {"type": "STATE_UPDATE", "state": render_state_to_dict(view)}
             )
+
+    async def broadcast_mode(self, status: str):
+        for websocket in self.active_connections.values():
+            await websocket.send_json({"type": "MODE_UPDATE", "status": status})
 
 
 app = FastAPI()
@@ -38,6 +43,8 @@ async def start_game(num_players: int):
 
 
 async def run_lobby(websocket: WebSocket):
+    await manager.broadcast_mode("lobby")
+
     while not game_started_event.is_set():
         recv_task = asyncio.create_task(websocket.receive_json())
         wait_task = asyncio.create_task(game_started_event.wait())
@@ -65,12 +72,20 @@ async def run_lobby(websocket: WebSocket):
 
 
 async def run_game(websocket: WebSocket, player_id: int):
+    await manager.broadcast_mode("game")
+
+    global game
+    await manager.broadcast_game_state(game)
+
     while game_started_event.is_set():
         data = await websocket.receive_json()
 
         if data.get("action") == "quit_game":
-            global game
             game_started_event.clear()
+            return
+
+        if data.get("action") == "undo":
+            game.undo()
             return
 
         if player_id != game.state.player_turn:

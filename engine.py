@@ -41,14 +41,15 @@ Note = list[Card]
 
 @dataclass
 class State:
+    player_turn: int
+    num_extra_turns: int
     deck: list[Card]
-    discarded: list[Card]
-    played: list[Card]
     hands: list[list[Card]]
     hints: list[list[Hints]]
     notes: list[list[Note]]
-    player_turn: int
-    num_extra_turns: int
+    discarded: list[Card] = field(default_factory=list)
+    played: list[Card] = field(default_factory=list)
+    last_actions: list[list[str]] = field(default_factory=list)
     num_hints: int = 8
     num_lives: int = 3
 
@@ -92,8 +93,6 @@ def initialize_state(num_players: int, seed: int | None = None) -> State:
         hands=hands,
         hints=hints,
         player_turn=player_turn,
-        discarded=[],
-        played=[],
         notes=notes,
         num_extra_turns=num_players,
     )
@@ -124,6 +123,9 @@ class Game:
         self._advance_turn()
         if self._is_game_over():
             self.game_over = True
+
+        action = ["play_card", str(player), card.color.value, str(card.rank.value)]
+        self.state.last_actions.append(action)
         return
 
     def discard_card(self, card_ind: int):
@@ -137,30 +139,33 @@ class Game:
         self._advance_turn()
         if self._is_game_over():
             self.game_over = True
+
+        action = ["discard_card", str(player), card.color.value, str(card.rank.value)]
+        self.state.last_actions.append(action)
         return
 
-    def give_hint(self, player_ind: int, hint: Color | Rank):
+    def give_hint(self, player: int, hint: Hint):
         self._last_state = deepcopy(self.state)
 
         if self.state.num_hints == 0:
             raise ValueError("No hint tokens are available.")
 
-        if self.state.player_turn == player_ind:
+        if self.state.player_turn == player:
             raise ValueError("Cannot give hint to yourself.")
 
-        hand = self.state.hands[player_ind]
+        hand = self.state.hands[player]
         if isinstance(hint, Color):
             for i in range(5):
                 if hand[i].color == hint:
-                    self.state.hints[player_ind][i].colors = {hint}
+                    self.state.hints[player][i].colors = {hint}
                 else:
-                    self.state.hints[player_ind][i].colors.discard(hint)
+                    self.state.hints[player][i].colors.discard(hint)
         elif isinstance(hint, Rank):
             for i in range(5):
                 if hand[i].rank == hint:
-                    self.state.hints[player_ind][i].ranks = {hint}
+                    self.state.hints[player][i].ranks = {hint}
                 else:
-                    self.state.hints[player_ind][i].ranks.discard(hint)
+                    self.state.hints[player][i].ranks.discard(hint)
         else:
             raise TypeError("Hint must be Color or Rank.")
 
@@ -168,6 +173,13 @@ class Game:
         self._advance_turn()
         if self._is_game_over():
             self.game_over = True
+
+        action = [
+            "give_hint",
+            str(player),
+            hint.value if isinstance(hint, Color) else str(hint.value),
+        ]
+        self.state.last_actions.append(action)
         return
 
     def add_note(self, player_ind: int, card_ind: int, note: Note):
@@ -207,6 +219,8 @@ class Game:
         if self.state.deck:
             new_card = self.state.deck.pop(0)
             self.state.hands[player_ind].append(new_card)
+            self.state.hints[player_ind].append(Hints())
+            self.state.notes[player_ind].append([])
         return card
 
     def _is_card_playable(self, card: Card) -> bool:
@@ -230,44 +244,3 @@ class Game:
 
         return True
 
-
-def card_to_dict(card: Card) -> dict[str, str | int]:
-    return {"color": card.color.value, "rank": card.rank.value}
-
-
-def dict_to_card(d: dict[str, str | int]) -> Card:
-    return Card(color=Color(d["color"]), rank=Rank(d["rank"]))
-
-
-def hints_to_dict(hint: Hints) -> dict[str, list[str] | list[int]]:
-    return {
-        "colors": [c.value for c in hint.colors],
-        "ranks": [r.value for r in hint.ranks],
-    }
-
-
-def dict_to_hint(d: dict[str, str | int]) -> Hint:
-    if "color" in d:
-        return Color(d["color"])
-    elif "rank" in d:
-        return Rank(d["rank"])
-    else:
-        raise ValueError("Dict must have 'color' or 'rank'")
-
-
-def state_to_dict(state: State) -> dict[str, int | list[object]]:
-    return {
-        "deck": [card_to_dict(c) for c in state.deck],
-        "discarded": [card_to_dict(c) for c in state.discarded],
-        "played": [card_to_dict(c) for c in state.played],
-        "hands": [[card_to_dict(c) for c in hand] for hand in state.hands],
-        "hints": [[hints_to_dict(h) for h in p_hints] for p_hints in state.hints],
-        "notes": [
-            [[card_to_dict(c) for c in note] for note in p_notes]
-            for p_notes in state.notes
-        ],
-        "player_turn": state.player_turn,
-        "num_extra_turns": state.num_extra_turns,
-        "num_hints": state.num_hints,
-        "num_lives": state.num_lives,
-    }
