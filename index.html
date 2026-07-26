@@ -238,9 +238,31 @@
                     cardCol.className = 'card-column';
 
                     const cDiv = document.createElement('div');
-                    const displayColor = isMe ? (card.color || 'gray') : card.color;
+                    
+                    let displayColor = 'gray';
+                    let displayRank = '';
+
+                    if (isMe) {
+                        const possibleColors = colorNames.filter(c => !(card.eliminated_colors || []).includes(c));
+                        if (possibleColors.length === 1) {
+                            displayColor = possibleColors[0];
+                        } else {
+                            displayColor = 'gray';
+                        }
+
+                        const possibleRanks = [1, 2, 3, 4, 5].filter(r => !(card.eliminated_ranks || []).includes(r));
+                        if (possibleRanks.length === 1) {
+                            displayRank = possibleRanks[0];
+                        } else {
+                            displayRank = '';
+                        }
+                    } else {
+                        displayColor = card.color || 'gray';
+                        displayRank = card.rank || '';
+                    }
+
                     cDiv.className = `card-box card-${displayColor.toLowerCase()} shadow-1`;
-                    cDiv.innerHTML = `<span class="f3">${card.rank || ''}</span>`;
+                    cDiv.innerHTML = `<span class="f3">${displayRank}</span>`;
                     
                     if (isMe) {
                         cDiv.appendChild(createHintMatrix(card));
@@ -270,21 +292,40 @@
                 if (isMyTurn && !isMe) {
                     const controls = document.createElement('div');
                     controls.className = 'mt3 pt2 bt b--black-20 flex flex-wrap items-center';
-                    controls.innerHTML = `<span class="f6 mr3 o-80">Give Hint to ${playerName}:</span>`;
                     
-                    const colorGroup = document.createElement('div');
-                    colorGroup.className = 'mr3 mb1 flex gap-1';
+                    // Add "Hint:" label
+                    const label = document.createElement('span');
+                    label.className = 'f6 mr3 o-80';
+                    label.innerText = 'Hint:';
+                    controls.appendChild(label);
+                    
+                    // Color hint buttons
                     colorNames.forEach(c => {
-                        colorGroup.innerHTML += `<button onclick="action('give_hint', {player_ind: ${pIdx}, hint: {color: '${c}'}})" class="button-reset bg-near-white dark-gray ba b--black-20 ph2 pv1 pointer f7 br1 action-btn">${c}</button>`;
-                    });
-                    controls.appendChild(colorGroup);
+                        const btn = document.createElement('button');
+                        btn.onclick = () => action('give_hint', {player_ind: pIdx, hint: {color: c}});
+                        
+                        let style = "padding: 0.25rem 0.5rem; margin-right: 0.25rem; margin-bottom: 0.25rem; border-radius: 0.2rem; border: 1px solid rgba(0,0,0,0.2); font-weight: bold; cursor: pointer;";
+                        if (c === 'Red') style += " background-color: #e74c3c; color: white;";
+                        else if (c === 'Blue') style += " background-color: #3498db; color: white;";
+                        else if (c === 'Green') style += " background-color: #27ae60; color: white;";
+                        else if (c === 'Yellow') style += " background-color: #f1c40f; color: #2c3e50;";
+                        else if (c === 'White') style += " background-color: #ecf0f1; color: #2c3e50;";
 
-                    const rankGroup = document.createElement('div');
-                    rankGroup.className = 'mb1 flex gap-1';
-                    [1, 2, 3, 4, 5].forEach(r => {
-                        rankGroup.innerHTML += `<button onclick="action('give_hint', {player_ind: ${pIdx}, hint: {rank: ${r}}})" class="button-reset bg-near-white dark-gray ba b--black-20 ph2 pv1 pointer f7 br1 action-btn">${r}</button>`;
+                        btn.style.cssText = style;
+                        btn.className = 'button-reset f7 action-btn';
+                        btn.innerText = c[0];
+                        controls.appendChild(btn);
                     });
-                    controls.appendChild(rankGroup);
+
+                    // Rank hint buttons (grey background, same spacing/styling)
+                    [1, 2, 3, 4, 5].forEach(r => {
+                        const btn = document.createElement('button');
+                        btn.onclick = () => action('give_hint', {player_ind: pIdx, hint: {rank: r}});
+                        btn.style.cssText = "background-color: #7f8c8d; color: white; padding: 0.25rem 0.5rem; margin-right: 0.25rem; margin-bottom: 0.25rem; border-radius: 0.2rem; border: 1px solid rgba(0,0,0,0.2); font-weight: bold; cursor: pointer;";
+                        btn.className = 'button-reset f7 action-btn';
+                        btn.innerText = r;
+                        controls.appendChild(btn);
+                    });
                     
                     pDiv.appendChild(controls);
                 }
