@@ -126,11 +126,25 @@
             socket.send(JSON.stringify({action: type, ...extra}));
         }
 
-        function createHintMatrix(card) {
+        function getCardDisplayColor(card, isMe) {
+            if (isMe) {
+                const possibleColors = colorNames.filter(c => !(card.eliminated_colors || []).includes(c));
+                return possibleColors.length === 1 ? possibleColors[0] : 'gray';
+            } else {
+                return card.color || 'gray';
+            }
+        }
+
+        function createHintMatrix(card, isMe) {
             const container = document.createElement('div');
             container.className = 'hint-matrix';
             const colors = card.eliminated_colors || [];
             const ranks = card.eliminated_ranks || [];
+
+            const displayColor = getCardDisplayColor(card, isMe);
+            const isLightCard = (displayColor === 'Yellow' || displayColor === 'White');
+            const rankTextColor = isLightCard ? '#2c3e50' : '#ffffff';
+            const rankBgColor = isLightCard ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)';
 
             colorNames.forEach(c => {
                 const div = document.createElement('div');
@@ -149,7 +163,7 @@
             [1, 2, 3, 4, 5].forEach(r => {
                 const div = document.createElement('div');
                 div.className = `hint-item ${ranks.includes(r) ? 'crossed' : ''}`;
-                div.style.cssText = "background: rgba(255,255,255,0.2); color: white; font-weight: bold;";
+                div.style.cssText = `background: ${rankBgColor}; color: ${rankTextColor}; font-weight: bold;`;
                 div.innerText = r;
                 container.appendChild(div);
             });
@@ -262,11 +276,9 @@
                     }
 
                     cDiv.className = `card-box card-${displayColor.toLowerCase()} shadow-1`;
-                    cDiv.innerHTML = `<span class="f3">${displayRank}</span>`;
+                    cDiv.innerHTML = `<span class="f3 mb4">${displayRank}</span>`;
                     
-                    if (isMe) {
-                        cDiv.appendChild(createHintMatrix(card));
-                    }
+                    cDiv.appendChild(createHintMatrix(card, isMe));
                     cardCol.appendChild(cDiv);
 
                     // If it's my turn and my hand, append Play and Discard buttons in columns underneath
