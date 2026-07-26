@@ -128,12 +128,13 @@ class Game:
 
         if card.rank == Rank.FIVE:
             self.state.num_hints = min(8, self.state.num_hints + 1)
-        self._advance_turn()
-        if is_game_over(self.state):
-            self.game_over = True
 
         action = ["play_card", self.state.player_names[player_ind], card.color.value, str(card.rank.value)]
         self.state.last_actions.append(action)
+
+        self._advance_turn()
+        if is_game_over(self.state):
+            self.game_over = True
         return
 
     def discard_card(self, card_ind: int):
@@ -144,12 +145,13 @@ class Game:
         self.state.discarded.append(card)
 
         self.state.num_hints = min(8, self.state.num_hints + 1)
-        self._advance_turn()
-        if is_game_over(self.state):
-            self.game_over = True
 
         action = ["discard_card", self.state.player_names[player_ind], card.color.value, str(card.rank.value)]
         self.state.last_actions.append(action)
+
+        self._advance_turn()
+        if is_game_over(self.state):
+            self.game_over = True
         return
 
     def give_hint(self, player_ind: int, hint: Hint):
@@ -178,9 +180,6 @@ class Game:
             raise TypeError("Hint must be Color or Rank.")
 
         self.state.num_hints -= 1
-        self._advance_turn()
-        if is_game_over(self.state):
-            self.game_over = True
 
         action = [
             "give_hint",
@@ -189,6 +188,10 @@ class Game:
             hint.value if isinstance(hint, Color) else str(hint.value),
         ]
         self.state.last_actions.append(action)
+
+        self._advance_turn()
+        if is_game_over(self.state):
+            self.game_over = True
         return
 
     def add_note(self, player_ind: int, card_ind: int, note: Note):

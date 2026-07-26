@@ -134,6 +134,7 @@
     <script>
         let socket, myId;
         const colorNames = ['Red', 'Blue', 'Green', 'Yellow', 'White'];
+        const discardColors = ['Red', 'Yellow', 'Green', 'Blue', 'White'];
 
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -229,7 +230,7 @@
             // Render Discard Pile
             const dp = document.getElementById('discard-pile');
             dp.innerHTML = (state.discard_pile || []).map((cards, idx) => {
-                const color = colorNames[idx] || 'Gray';
+                const color = discardColors[idx] || 'Gray';
                 const sortedCards = [...cards].sort((a, b) => a - b);
                 
                 let rowHTML = `<div class="flex flex-row mb1 items-center">`;
