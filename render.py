@@ -61,8 +61,6 @@ def render_state_to_dict(state: State) -> dict[str, object]:
         cards = [card.rank.value for card in state.discarded if card.color == color]
         discard_pile.append(cards)
 
-    last_actions = [" ".join(a) for a in state.last_actions[-5:]]
-
     max_ranks = get_max_ranks(state.played)
 
     my_player = get_player(state.hands)
@@ -83,7 +81,7 @@ def render_state_to_dict(state: State) -> dict[str, object]:
         "deck": deck_display,
         "fireworks": [(c.value, v) for c, v in zip(Color, max_ranks)],
         "discard_pile": discard_pile,
-        "last_actions": last_actions,
+        "last_actions": state.last_actions[-5:],
         "player_turn": state.player_turn,
         "hands": hands,
         "player_names": state.player_names,

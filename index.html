@@ -34,6 +34,46 @@
         
         .action-btn { cursor: pointer; transition: transform 0.1s ease; }
         .action-btn:hover { transform: scale(1.05); }
+
+        /* Taller and styled logs container */
+        #logs {
+            height: 280px;
+            max-height: 280px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* Mini-card and hint badges inside action logs */
+        .log-card-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin: 0 2px;
+        }
+        .badge-Red { background-color: #e74c3c; color: white; }
+        .badge-Blue { background-color: #3498db; color: white; }
+        .badge-Green { background-color: #27ae60; color: white; }
+        .badge-Yellow { background-color: #f1c40f; color: #2c3e50; }
+        .badge-White { background-color: #ecf0f1; color: #2c3e50; }
+        .badge-gray { background-color: #7f8c8d; color: white; }
+
+        /* Small square block for color hints */
+        .log-color-square {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            vertical-align: middle;
+            margin: 0 2px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body class="bg-main-dark h-100 flex flex-column">
@@ -88,7 +128,7 @@
 
         <div id="players-area" class="flex-grow-1 overflow-y-scroll pa3"></div>
 
-        <div id="logs" class="pa2 bg-black-40 f7 o-80 h3 overflow-y-scroll"></div>
+        <div id="logs" class="pa2 bg-black-40 o-90"></div>
     </div>
 
     <script>
@@ -103,7 +143,7 @@
         function connect() {
             const nameVal = document.getElementById('p-id').value.trim();
             if (!nameVal) return alert("Please enter a Player Name");
-            myId = nameVal; // myId is now the string name (e.g., "Alice")
+            myId = nameVal;
 
             socket = new WebSocket(`ws://localhost:8000/ws/${encodeURIComponent(myId)}`);
 
@@ -186,7 +226,7 @@
                 `<div class="card-box card-${f[0].toLowerCase()} mr2 shadow-1"><span class="f3">${f[1]}</span></div>`
             ).join('');
 
-            // Render Discard Pile (5 rows, sorted cards, smaller size, right-aligned)
+            // Render Discard Pile
             const dp = document.getElementById('discard-pile');
             dp.innerHTML = (state.discard_pile || []).map((cards, idx) => {
                 const color = colorNames[idx] || 'Gray';
@@ -204,9 +244,49 @@
                 return rowHTML;
             }).join('');
 
-            // Render Logs
+            // Render Structured Action Logs
+            const logsContainer = document.getElementById('logs');
+            logsContainer.innerHTML = '';
             if (state.last_actions) {
-                document.getElementById('logs').innerHTML = state.last_actions.map(a => `<div>${a}</div>`).join('');
+                state.last_actions.forEach(action => {
+                    const p = document.createElement("div");
+                    p.className = "log-entry";
+                    const type = action[0];
+
+                    if (type === "play_card" || type === "discard_card") {
+                        const [_, playerName, color, rank] = action;
+                        const actionVerb = type === "play_card" ? "played" : "discarded";
+                        p.innerHTML = `${playerName} ${actionVerb} `;
+                        
+                        // Show card's color background with only the rank number (no color name)
+                        const cardBadge = document.createElement("span");
+                        cardBadge.className = `log-card-badge badge-${color}`;
+                        cardBadge.textContent = rank;
+                        p.appendChild(cardBadge);
+
+                    } else if (type === "give_hint") {
+                        const [_, giverName, targetName, hintVal] = action;
+                        p.innerHTML = `${giverName} hinted ${targetName} about `;
+
+                        const isColor = ["Red", "Yellow", "Green", "Blue", "White"].includes(hintVal);
+                        if (isColor) {
+                            // Show only a colored square block for color hints
+                            const colorSquare = document.createElement("span");
+                            colorSquare.className = `log-color-square badge-${hintVal}`;
+                            p.appendChild(colorSquare);
+                        } else {
+                            // Show gray background for number/rank hints
+                            const hintBadge = document.createElement("span");
+                            hintBadge.className = `log-card-badge badge-gray`;
+                            hintBadge.textContent = hintVal;
+                            p.appendChild(hintBadge);
+                        }
+                    } else {
+                        p.textContent = action.join(" ");
+                    }
+                    logsContainer.appendChild(p);
+                });
+                logsContainer.scrollTop = logsContainer.scrollHeight;
             }
 
             const isGameOver = state.game_over;
@@ -245,7 +325,6 @@
                 headerHTML += `</div></div>`;
                 pDiv.innerHTML = headerHTML;
 
-                // Cards & Actions Grid Row
                 const row = document.createElement('div');
                 row.className = 'flex flex-row flex-wrap';
 
@@ -260,18 +339,10 @@
 
                     if (isMe) {
                         const possibleColors = colorNames.filter(c => !(card.eliminated_colors || []).includes(c));
-                        if (possibleColors.length === 1) {
-                            displayColor = possibleColors[0];
-                        } else {
-                            displayColor = 'gray';
-                        }
+                        displayColor = possibleColors.length === 1 ? possibleColors[0] : 'gray';
 
                         const possibleRanks = [1, 2, 3, 4, 5].filter(r => !(card.eliminated_ranks || []).includes(r));
-                        if (possibleRanks.length === 1) {
-                            displayRank = possibleRanks[0];
-                        } else {
-                            displayRank = '';
-                        }
+                        displayRank = possibleRanks.length === 1 ? possibleRanks[0] : '';
                     } else {
                         displayColor = card.color || 'gray';
                         displayRank = card.rank || '';
@@ -283,7 +354,6 @@
                     cDiv.appendChild(createHintMatrix(card, isMe));
                     cardCol.appendChild(cDiv);
 
-                    // If it's my turn and my hand, append Play and Discard buttons in columns underneath
                     if (isMyTurn && isMe) {
                         const playBtn = document.createElement('button');
                         playBtn.onclick = () => action('play_card', {card_ind: cIdx});
@@ -302,18 +372,15 @@
                 });
                 pDiv.appendChild(row);
 
-                // --- CONTROLS FOR GIVING HINTS (Only if IT IS MY TURN and it is NOT my hand) ---
                 if (isMyTurn && !isMe) {
                     const controls = document.createElement('div');
                     controls.className = 'mt3 pt2 bt b--black-20 flex flex-wrap items-center';
                     
-                    // Add "Hint:" label
                     const label = document.createElement('span');
                     label.className = 'f6 mr3 o-80';
                     label.innerText = 'Hint:';
                     controls.appendChild(label);
                     
-                    // Color hint buttons
                     colorNames.forEach(c => {
                         const btn = document.createElement('button');
                         btn.onclick = () => action('give_hint', {player_ind: pIdx, hint: {color: c}});
@@ -331,7 +398,6 @@
                         controls.appendChild(btn);
                     });
 
-                    // Rank hint buttons (grey background, same spacing/styling)
                     [1, 2, 3, 4, 5].forEach(r => {
                         const btn = document.createElement('button');
                         btn.onclick = () => action('give_hint', {player_ind: pIdx, hint: {rank: r}});

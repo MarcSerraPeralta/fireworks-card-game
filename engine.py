@@ -118,8 +118,8 @@ class Game:
     def play_card(self, card_ind: int):
         self._last_state = deepcopy(self.state)
 
-        player = self.state.player_turn
-        card = self._remove_and_draw_card(player, card_ind)
+        player_ind = self.state.player_turn
+        card = self._remove_and_draw_card(player_ind, card_ind)
         if self._is_card_playable(card):
             self.state.played.append(card)
         else:
@@ -132,15 +132,15 @@ class Game:
         if is_game_over(self.state):
             self.game_over = True
 
-        action = ["play_card", str(player), card.color.value, str(card.rank.value)]
+        action = ["play_card", self.state.player_names[player_ind], card.color.value, str(card.rank.value)]
         self.state.last_actions.append(action)
         return
 
     def discard_card(self, card_ind: int):
         self._last_state = deepcopy(self.state)
 
-        player = self.state.player_turn
-        card = self._remove_and_draw_card(player, card_ind)
+        player_ind = self.state.player_turn
+        card = self._remove_and_draw_card(player_ind, card_ind)
         self.state.discarded.append(card)
 
         self.state.num_hints = min(8, self.state.num_hints + 1)
@@ -148,32 +148,32 @@ class Game:
         if is_game_over(self.state):
             self.game_over = True
 
-        action = ["discard_card", str(player), card.color.value, str(card.rank.value)]
+        action = ["discard_card", self.state.player_names[player_ind], card.color.value, str(card.rank.value)]
         self.state.last_actions.append(action)
         return
 
-    def give_hint(self, player: int, hint: Hint):
+    def give_hint(self, player_ind: int, hint: Hint):
         self._last_state = deepcopy(self.state)
 
         if self.state.num_hints == 0:
             raise ValueError("No hint tokens are available.")
 
-        if self.state.player_turn == player:
+        if self.state.player_turn == player_ind:
             raise ValueError("Cannot give hint to yourself.")
 
-        hand = self.state.hands[player]
+        hand = self.state.hands[player_ind]
         if isinstance(hint, Color):
             for i in range(5):
                 if hand[i].color == hint:
-                    self.state.hints[player][i].colors = {hint}
+                    self.state.hints[player_ind][i].colors = {hint}
                 else:
-                    self.state.hints[player][i].colors.discard(hint)
+                    self.state.hints[player_ind][i].colors.discard(hint)
         elif isinstance(hint, Rank):
             for i in range(5):
                 if hand[i].rank == hint:
-                    self.state.hints[player][i].ranks = {hint}
+                    self.state.hints[player_ind][i].ranks = {hint}
                 else:
-                    self.state.hints[player][i].ranks.discard(hint)
+                    self.state.hints[player_ind][i].ranks.discard(hint)
         else:
             raise TypeError("Hint must be Color or Rank.")
 
@@ -184,7 +184,8 @@ class Game:
 
         action = [
             "give_hint",
-            str(player),
+            self.state.player_names[self.state.player_turn],
+            self.state.player_names[player_ind],
             hint.value if isinstance(hint, Color) else str(hint.value),
         ]
         self.state.last_actions.append(action)
