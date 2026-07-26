@@ -86,7 +86,7 @@ def render_state_to_dict(state: State) -> dict[str, object]:
         "last_actions": last_actions,
         "player_turn": state.player_turn,
         "hands": hands,
-        "player_names": [f"Player {i}" for i, _ in enumerate(state.hands)],
+        "player_names": state.player_names,
         "game_over": is_game_over(state),
     }
 

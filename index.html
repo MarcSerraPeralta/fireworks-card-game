@@ -42,7 +42,7 @@
         <h1 class="f2 mb3">Fireworks Online</h1>
         <p class="f5 mb4 o-70">Cooperative multiplayer card game</p>
         <div class="bg-black-50 pa4 br3 shadow-2 flex flex-column">
-            <input id="p-id" class="input-reset ba b--black-20 pa2 mb3 db w-100 br2 bg-near-white dark-gray" placeholder="Enter Player ID (e.g., 0, 1...)">
+            <input id="p-id" class="input-reset ba b--black-20 pa2 mb3 db w-100 br2 bg-near-white dark-gray" placeholder="Enter Player Name (e.g., Alice, Bob)">
             <button onclick="connect()" class="button-reset b ph3 pv2 input-reset ba b--transparent bg-blue white pointer br2 f5">Connect</button>
         </div>
     </div>
@@ -101,11 +101,11 @@
         }
 
         function connect() {
-            const idVal = document.getElementById('p-id').value;
-            if (!idVal) return alert("Please enter a Player ID");
-            myId = parseInt(idVal);
+            const nameVal = document.getElementById('p-id').value.trim();
+            if (!nameVal) return alert("Please enter a Player Name");
+            myId = nameVal; // myId is now the string name (e.g., "Alice")
 
-            socket = new WebSocket(`ws://localhost:8000/ws/${myId}`);
+            socket = new WebSocket(`ws://localhost:8000/ws/${encodeURIComponent(myId)}`);
 
             socket.onmessage = (e) => {
                 try {
@@ -210,7 +210,9 @@
             }
 
             const isGameOver = state.game_over;
-            const isMyTurn = (state.player_turn === myId) && !isGameOver;
+            const playerNames = state.player_names || [];
+            const currentTurnName = playerNames[state.player_turn];
+            const isMyTurn = (currentTurnName === myId) && !isGameOver;
 
             // Render Hands & Board
             const area = document.getElementById('players-area');
@@ -224,8 +226,9 @@
             }
 
             (state.hands || []).forEach((hand, pIdx) => {
-                const isTurn = (pIdx === state.player_turn) && !isGameOver;
-                const isMe = (pIdx === myId);
+                const playerName = playerNames[pIdx] || `Player ${pIdx}`;
+                const isTurn = (playerName === currentTurnName) && !isGameOver;
+                const isMe = (playerName === myId);
 
                 const pDiv = document.createElement('div');
                 pDiv.className = `mb3 pa3 br2 bg-black-30 ba ${isTurn ? 'b--yellow' : 'b--transparent'}`;
@@ -235,7 +238,6 @@
                 if (isTurn) {
                     headerHTML += `<span class="yellow mr2 fw-bold">➤</span>`;
                 }
-                const playerName = (state.player_names && state.player_names[pIdx]) ? state.player_names[pIdx] : `Player ${pIdx}`;
                 headerHTML += `<span class="f5 fw6">${isMe ? 'You (' + playerName + ')' : playerName}</span>`;
                 if (isTurn) {
                     headerHTML += `<span class="ml2 f7 bg-yellow dark-gray px1 br1 fw6">Turn</span>`;

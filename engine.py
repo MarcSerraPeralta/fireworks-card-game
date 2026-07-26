@@ -42,6 +42,7 @@ Note = list[Card]
 @dataclass
 class State:
     player_turn: int
+    player_names: list[str]
     num_extra_turns: int
     deck: list[Card]
     hands: list[list[Card]]
@@ -70,8 +71,14 @@ def get_shuffled_deck(seed: int | None = None) -> list[Card]:
     return deck
 
 
-def initialize_state(num_players: int, seed: int | None = None) -> State:
+def initialize_state(players: list[str] | int, seed: int | None = None) -> State:
     """Returns initial state of the game, with a shuffled deck."""
+    if isinstance(players, list):
+        num_players = len(players)
+    elif isinstance(players, int):
+        num_players = players
+        players = [f"Player {i}" for i in range(1, num_players + 1)]
+
     if num_players > 6:
         raise ValueError("Max number of players is 5.")
 
@@ -95,15 +102,16 @@ def initialize_state(num_players: int, seed: int | None = None) -> State:
         player_turn=player_turn,
         notes=notes,
         num_extra_turns=num_players,
+        player_names=players,
     )
 
 
 class Game:
-    def __init__(self, num_players: int, seed: int | None = None):
-        self.state: State = initialize_state(num_players, seed=seed)
+    def __init__(self, players: list[str] | int, seed: int | None = None):
+        self.state: State = initialize_state(players, seed=seed)
         self._last_state: State | None = None
 
-        self.num_players: int = num_players
+        self.num_players: int = len(self.state.player_names)
         self.game_over: bool = False
         return
 
@@ -232,7 +240,7 @@ class Game:
 
         return card.rank.value == current_rank + 1
 
-def is_game_over(state) -> bool:
+def is_game_over(state: State) -> bool:
     if state.num_extra_turns == 0:
         return True
     if state.num_lives == 0:
