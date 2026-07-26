@@ -146,7 +146,11 @@
             if (!nameVal) return alert("Please enter a Player Name");
             myId = nameVal;
 
-            socket = new WebSocket(`ws://localhost:8000/ws/${encodeURIComponent(myId)}`);
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            // Fall back to localhost:8000 if opened via file:// protocol
+            const host = window.location.host ? window.location.host : 'localhost:8000';
+            
+            socket = new WebSocket(`${wsProtocol}//${host}/ws/${encodeURIComponent(myId)}`);
 
             socket.onmessage = (e) => {
                 try {
@@ -259,7 +263,6 @@
                         const actionVerb = type === "play_card" ? "played" : "discarded";
                         p.innerHTML = `${playerName} ${actionVerb} `;
                         
-                        // Show card's color background with only the rank number (no color name)
                         const cardBadge = document.createElement("span");
                         cardBadge.className = `log-card-badge badge-${color}`;
                         cardBadge.textContent = rank;
@@ -271,12 +274,10 @@
 
                         const isColor = ["Red", "Yellow", "Green", "Blue", "White"].includes(hintVal);
                         if (isColor) {
-                            // Show only a colored square block for color hints
                             const colorSquare = document.createElement("span");
                             colorSquare.className = `log-color-square badge-${hintVal}`;
                             p.appendChild(colorSquare);
                         } else {
-                            // Show gray background for number/rank hints
                             const hintBadge = document.createElement("span");
                             hintBadge.className = `log-card-badge badge-gray`;
                             hintBadge.textContent = hintVal;
