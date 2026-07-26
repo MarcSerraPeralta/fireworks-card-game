@@ -147,8 +147,8 @@
             myId = nameVal;
 
             const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            // Fall back to localhost:8000 if opened via file:// protocol
-            const host = window.location.host ? window.location.host : 'localhost:8000';
+            // Fall back to localhost:8082 if opened via file:// protocol
+            const host = window.location.host ? window.location.host : 'localhost:8082';
             
             socket = new WebSocket(`${wsProtocol}//${host}/ws/${encodeURIComponent(myId)}`);
 
