@@ -158,10 +158,12 @@ class Game:
         self._last_state = deepcopy(self.state)
 
         if self.state.num_hints == 0:
-            raise ValueError("No hint tokens are available.")
+            print("No hint tokens are available.")
+            return
 
         if self.state.player_turn == player_ind:
-            raise ValueError("Cannot give hint to yourself.")
+            print("Cannot give hint to yourself.")
+            return
 
         hand = self.state.hands[player_ind]
         if isinstance(hint, Color):
@@ -177,7 +179,8 @@ class Game:
                 else:
                     self.state.hints[player_ind][i].ranks.discard(hint)
         else:
-            raise TypeError("Hint must be Color or Rank.")
+            print("Hint must be Color or Rank.")
+            return
 
         self.state.num_hints -= 1
 
@@ -200,7 +203,8 @@ class Game:
 
     def undo(self):
         if self._last_state is None:
-            raise ValueError("Cannot undo twice.")
+            print("Cannot undo twice.")
+            return
         self.state = self._last_state
         self._last_state = None
         return
